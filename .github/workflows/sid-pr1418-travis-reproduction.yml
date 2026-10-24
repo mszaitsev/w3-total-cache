@@ -58,7 +58,19 @@ jobs:
       - name: Install JS dependencies (Travis equivalent)
         run: yarn install --frozen-lockfile
       - name: Verify generated hook documentation (Travis equivalent)
-        run: yarn run hooks:check
+        run: |
+          set -euo pipefail
+          if yarn run hooks:check; then
+            echo "PASS: documentation matches current source"
+          else
+            echo "HOOKS CHECK FAILED: inspect generated diff"
+            cp docs/hooks.md /tmp/hooks-baseline.md
+            php bin/generate-hooks-docs.php
+            diff -u /tmp/hooks-baseline.md docs/hooks.md | head -120 || true
+            echo "Checking whether original master has the same documentation drift:"
+            git archive ${{ github.sha }} | tar -tf - | head -1 >/dev/null
+            exit 1
+          fi
       - name: Production dependency install (Travis equivalent)
         run: composer install --no-dev --no-interaction --prefer-dist -o
       - name: PHP lint
