@@ -1,0 +1,48 @@
+name: PHP 7.4 null cache diagnostics
+
+on:
+  push:
+    branches:
+      - ci/php74-null-cache-diagnostics
+
+permissions:
+  contents: read
+
+jobs:
+  php74:
+    name: PHP 7.4 regression diagnostics
+    runs-on: ubuntu-22.04
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP 7.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, xml, mysqli, curl, zip, gd, intl
+          coverage: xdebug
+          tools: composer:v2
+      - name: Verify PHP version and syntax
+        run: |
+          php -v
+          php -l ObjectCache_WpObjectCache.php
+          php -l tests/admin/class-w3tc-objectcache-null-group-test.php
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install WordPress test suite
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1
+      - name: Run targeted regression test
+        run: vendor/bin/phpunit --filter test_engine_selection_for_null_and_named_groups --debug --verbose
+      - name: Run complete unit suite
+        run: vendor/bin/phpunit --debug --verbose --coverage-clover=coverage.xml
