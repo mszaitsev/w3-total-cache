@@ -1,0 +1,45 @@
+name: PHP session SID compatibility diagnostics
+
+on:
+  push:
+    branches:
+      - ci/php-session-sid-compatibility
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sid-matrix:
+    name: PHP ${{ matrix.php }} SID matrix
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: Verify probe syntax
+        run: php -v && php -l tests/diagnostics/php-session-sid-matrix.php
+      - name: Record SID values for session configurations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cookies in 0 1; do
+            for only_cookies in 0 1; do
+              for trans_sid in 0 1; do
+                for phase in before active; do
+                  echo "=== cookies=${cookies} only_cookies=${only_cookies} trans_sid=${trans_sid} phase=${phase} ==="
+                  php -d error_reporting=-1 -d display_errors=stderr \
+                    -d session.use_cookies="${cookies}" \
+                    -d session.use_only_cookies="${only_cookies}" \
+                    -d session.use_trans_sid="${trans_sid}" \
+                    tests/diagnostics/php-session-sid-matrix.php "${phase}"
+                done
+              done
+            done
+          done
