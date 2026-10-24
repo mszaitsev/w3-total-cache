@@ -43,3 +43,24 @@ jobs:
               done
             done
           done
+
+      - name: Compare legacy and candidate cache guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l tests/diagnostics/php-session-sid-regression.php
+          for cookies in 0 1; do
+            for only_cookies in 0 1; do
+              for trans_sid in 0 1; do
+                for phase in before active cookie; do
+                  for name in default custom; do
+                    php -d error_reporting=-1 -d display_errors=stderr \
+                      -d session.use_cookies="${cookies}" \
+                      -d session.use_only_cookies="${only_cookies}" \
+                      -d session.use_trans_sid="${trans_sid}" \
+                      tests/diagnostics/php-session-sid-regression.php "${phase}" "${name}"
+                  done
+                done
+              done
+            done
+          done
