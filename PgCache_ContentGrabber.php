@@ -654,7 +654,7 @@ class PgCache_ContentGrabber {
 		}
 
 		// Skip if session defined.
-		if ( defined( 'SID' ) && ! empty( SID ) ) {
+		if ( session_status() === PHP_SESSION_ACTIVE && ! (bool) ini_get( 'session.use_only_cookies' ) ) {
 			$this->cache_reject_reason = 'Session started';
 			return false;
 		}
