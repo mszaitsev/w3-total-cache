@@ -50,5 +50,16 @@ jobs:
         run: vendor/bin/phpunit --debug --verbose --no-coverage
       - name: Multisite PHPUnit suite
         run: WP_MULTISITE=1 vendor/bin/phpunit --group multisite --no-coverage
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Yarn
+        run: npm install -g yarn
+      - name: Install JS dependencies (Travis equivalent)
+        run: yarn install --frozen-lockfile
+      - name: Verify generated hook documentation (Travis equivalent)
+        run: yarn run hooks:check
+      - name: Production dependency install (Travis equivalent)
+        run: composer install --no-dev --no-interaction --prefer-dist -o
       - name: PHP lint
         run: find . -name vendor -prune -o -name node_modules -prune -o -name '*.php' -exec php -lf {} \; > /dev/null
