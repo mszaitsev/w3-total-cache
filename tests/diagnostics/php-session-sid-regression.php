@@ -26,7 +26,8 @@ if ( 'before' !== $phase ) {
 
 $legacy = defined( 'SID' ) && ! empty( SID );
 $candidate = session_status() === PHP_SESSION_ACTIVE
-    && ! (bool) ini_get( 'session.use_only_cookies' );
+    && ! (bool) ini_get( 'session.use_only_cookies' )
+    && ! ( (bool) ini_get( 'session.use_cookies' ) && isset( $_COOKIE[ session_name() ] ) );
 $data = array(
     'php' => PHP_VERSION,
     'phase' => $phase,
